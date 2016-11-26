@@ -6,9 +6,20 @@ const express = require('express');
 
 const nodemailer = require('nodemailer');
 
-var bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
+
+const bunyan = require('bunyan');
 
 const app = express();
+
+const log = bunyan.createLogger({
+  name: 'mywebsite',
+  streams: [{
+    type: 'rotating-file',
+    path: '/var/log/shwetasabne.log',
+    period: '1d',
+  }]
+})
 
 const PORT = process.env.PORT || 3000;
 
@@ -19,6 +30,8 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 
 
 app.get('/', (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  log.info(`Received connection request from ${ip}`);
   res.sendFile(`${__dirname}/views/index.html`);
 });
 
@@ -33,19 +46,17 @@ app.post('/sendMail', (req, res) => {
 
   const mailOptions = {
     from: req.body.email,
-    to: 'sheer.shweta@gmail.com',
+    to: process.env.GMAIL_USER,
     subject: 'Contact from ' + req.body.name,
     text: req.body.name + ' >>> ' + req.body.message
   };
-
-  console.log('Recording mailing options ', mailOptions);
-
+  log.info(mailOptions, 'Attempting to send email')
   transporter.sendMail(mailOptions, function(error, info){
     if(error){
-        console.log(error);
-        res.json({yo: 'error'});
+        log.info(error, 'Error sending email');
+        throw error;
     }else{
-        console.log('Message sent: ' + info.response);
+        log.info(info, 'Successfully sent email');
         res.json({yo: info.response});
     };
 });
