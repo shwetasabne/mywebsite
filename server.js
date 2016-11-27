@@ -48,7 +48,7 @@ app.post('/sendMail', (req, res) => {
     from: req.body.email,
     to: process.env.GMAIL_USER,
     subject: 'Contact from ' + req.body.name,
-    text: req.body.name + ' >>> ' + req.body.message
+    text: req.body.email + ' >>> ' + req.body.name + ' >>> ' + req.body.message
   };
   log.info(mailOptions, 'Attempting to send email')
   transporter.sendMail(mailOptions, function(error, info){
